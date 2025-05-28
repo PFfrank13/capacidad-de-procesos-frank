@@ -1,0 +1,3972 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Avanzado de Capacidad de Proceso | Cp y Cpk</title>
+    <!-- Fuentes premium optimizadas -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Iconos SVG y fuentes para mejor renderización en PDF -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Bibliotecas avanzadas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <!-- Math.js para cálculos estadísticos precisos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    <style>
+        /* Variables con sistema de color premium */
+        :root {
+            /* Gradientes personalizados */
+            --primary-gradient: linear-gradient(135deg, #06beb6, #48b1bf);
+            --secondary-gradient: linear-gradient(135deg, #3a7bd5, #00d2ff);
+            --tertiary-gradient: linear-gradient(135deg, #1FA2FF, #12D8FA, #A6FFCB);
+            --accent-gradient: linear-gradient(135deg, #FF512F, #F09819);
+            --danger-gradient: linear-gradient(135deg, #ED213A, #93291E);
+            --warning-gradient: linear-gradient(135deg, #F7971E, #FFD200);
+            --success-gradient: linear-gradient(135deg, #11998e, #38ef7d);
+            --neutral-gradient: linear-gradient(135deg, #8E2DE2, #4A00E0);
+            --glass-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+            
+            /* Colores base */
+            --primary: #06beb6;
+            --primary-dark: #048f88;
+            --primary-light: #48b1bf;
+            --secondary: #3a7bd5;
+            --accent: #FF512F;
+            --text: #2D3748;
+            --text-light: #718096;
+            --background: #F8FAFC;
+            --card: #ffffff;
+            --card-hover: #FAFAFA;
+            --border-radius: 16px;
+            --border-radius-lg: 24px;
+            --box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            --box-shadow-hover: 0 20px 40px rgba(0,0,0,0.12);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            --highlight: rgba(72, 177, 191, 0.12);
+            --border-color: rgba(0,0,0,0.08);
+            --glass-effect: rgba(255, 255, 255, 0.8);
+            --max-width: 1400px;
+            
+            /* Variables para PDF */
+            --pdf-page-width: 210mm;  /* Ancho A4 */
+            --pdf-page-height: 297mm; /* Alto A4 */
+            --pdf-margin: 15mm;
+            --pdf-content-width: calc(var(--pdf-page-width) - 2 * var(--pdf-margin));
+        }
+
+        /* Modo oscuro */
+        [data-theme="dark"] {
+            --primary-gradient: linear-gradient(135deg, #06beb6, #48b1bf);
+            --primary: #06beb6;
+            --primary-dark: #048f88;
+            --primary-light: #48b1bf;
+            --secondary: #3a7bd5;
+            --text: #E2E8F0;
+            --text-light: #A0AEC0;
+            --background: #1A202C;
+            --card: #2D3748;
+            --card-hover: #3A4759;
+            --highlight: rgba(72, 177, 191, 0.15);
+            --border-color: rgba(255,255,255,0.1);
+            --glass-effect: rgba(45, 55, 72, 0.8);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+            line-height: 1.7;
+            color: var(--text);
+            background-color: var(--background);
+            transition: var(--transition);
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            font-size: 16px;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            line-height: 1.3;
+            letter-spacing: -0.02em;
+        }
+
+        .container {
+            max-width: var(--max-width);
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 25px;
+        }
+
+        /* Elementos específicos para impresión PDF */
+        .pdf-page {
+            page-break-after: always;
+        }
+
+        .pdf-content {
+            width: var(--pdf-content-width);
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Indicador de progreso de desplazamiento */
+        .progress-container {
+            position: fixed;
+            top: 0;
+            z-index: 1500;
+            width: 100%;
+            height: 4px;
+            background: transparent;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--primary-gradient);
+            width: 0%;
+            transition: width 0.1s ease;
+            box-shadow: 0 0 10px rgba(6, 190, 182, 0.5);
+        }
+
+        /* Navegación */
+        .nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background-color: var(--glass-effect);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            transition: var(--transition);
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 20px;
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo i {
+            margin-right: 10px;
+            font-size: 1.6rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .logo:hover i {
+            transform: rotate(20deg) scale(1.15);
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-links li {
+            margin-left: 30px;
+            position: relative;
+        }
+
+        .nav-links a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 1.05rem;
+            font-weight: 500;
+            transition: var(--transition);
+            position: relative;
+            padding: 6px 2px;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 3px;
+            bottom: 0;
+            left: 0;
+            background: var(--primary-gradient);
+            transition: width 0.4s ease;
+            border-radius: 3px;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .action-buttons {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-download {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            font-size: 1rem;
+            box-shadow: 0 4px 10px rgba(6, 190, 182, 0.2);
+            position: relative;
+        }
+
+        .btn-download:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(6, 190, 182, 0.3);
+        }
+
+        .btn-download i {
+            font-size: 1.1rem;
+        }
+
+        .pdf-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--card);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 10px 0;
+            width: 200px;
+            z-index: 100;
+            display: none;
+            margin-top: 5px;
+            border: 1px solid var(--border-color);
+        }
+
+        .pdf-dropdown.active {
+            display: block;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .pdf-dropdown-item {
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pdf-dropdown-item:hover {
+            background: var(--highlight);
+        }
+
+        .pdf-dropdown-item i {
+            font-size: 1rem;
+            color: var(--primary);
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 1.3rem;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--highlight);
+            transform: rotate(20deg);
+            color: var(--primary);
+        }
+
+        .mobile-menu {
+            display: none;
+            font-size: 1.6rem;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        /* Cabecera */
+        .header {
+            position: relative;
+            padding: 200px 0 160px;
+            background: var(--tertiary-gradient);
+            color: white;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        /* Patrón de fondo animado */
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            animation: moveBackground 60s linear infinite;
+        }
+
+        @keyframes moveBackground {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: 1000px 1000px;
+            }
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 2;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header h1 {
+            font-size: 4.5rem;
+            margin-bottom: 25px;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: fadeInUp 1s ease-out;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+            font-weight: 800;
+            background: linear-gradient(to right, #ffffff, #e6e6e6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            font-size: 1.5rem;
+            max-width: 800px;
+            margin: 0 auto 40px;
+            animation: fadeInUp 1.5s ease-out;
+            opacity: 0.92;
+            line-height: 1.6;
+            font-weight: 300;
+        }
+
+        .header-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            animation: fadeInUp 2s ease-out;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 34px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 50px;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            border: none;
+            text-align: center;
+            letter-spacing: 0.5px;
+            min-width: 180px;
+        }
+
+        .btn i {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+            z-index: -1;
+            transform: skewX(-20deg);
+        }
+
+        .btn:hover::before {
+            transform: skewX(-20deg) translateX(190%);
+        }
+
+        .btn-primary {
+            background: white;
+            color: var(--primary-dark);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+        }
+
+        /* Ola animada */
+        .wave {
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 110px;
+        }
+
+        /* Keyframes para animaciones */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes floatAnimation {
+            0% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-12px);
+            }
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Contenido principal */
+        .section {
+            padding: 120px 0;
+            position: relative;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 80px;
+            position: relative;
+            color: var(--text);
+            font-size: 3rem;
+        }
+
+        .section-title span {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-title::after {
+            content: "";
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90px;
+            height: 5px;
+            background: var(--primary-gradient);
+            border-radius: 3px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.2rem;
+            color: var(--text-light);
+            margin: -60px auto 60px;
+            max-width: 700px;
+        }
+
+        /* Cuadrícula de tarjetas */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 35px;
+            margin-bottom: 70px;
+        }
+
+        /* Tarjetas con efecto de elevación y bordes suaves */
+        .card {
+            background: var(--card);
+            border-radius: var(--border-radius);
+            padding: 45px 35px;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            z-index: 10;
+        }
+
+        .card:hover {
+            transform: translateY(-15px);
+            box-shadow: var(--box-shadow-hover);
+            background: var(--card-hover);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            width: calc(100% + 4px);
+            height: 5px;
+            background: var(--primary-gradient);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .card h3 {
+            color: var(--text);
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            position: relative;
+            display: inline-block;
+        }
+
+        .card h3 span {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card-icon {
+            position: absolute;
+            top: -25px;
+            right: -25px;
+            font-size: 10rem;
+            color: var(--primary);
+            opacity: 0.06;
+            transform: rotate(15deg);
+            transition: var(--transition);
+        }
+
+        .card:hover .card-icon {
+            transform: rotate(0deg) scale(1.15);
+            opacity: 0.09;
+        }
+
+        .card ul {
+            list-style: none;
+            margin: 20px 0;
+        }
+
+        .card ul li {
+            margin-bottom: 14px;
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .card ul li::before {
+            content: '\f058';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-size: 1rem;
+        }
+
+        /* Secciones de fórmulas con diseño premium */
+        .formula-box {
+            background-color: var(--card);
+            border-radius: var(--border-radius);
+            padding: 50px;
+            margin: 70px 0;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .formula-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: var(--primary-gradient);
+        }
+
+        .formula-box:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--box-shadow-hover);
+        }
+
+        .formula-box h3 {
+            color: var(--text);
+            margin-bottom: 30px;
+            font-size: 2rem;
+            display: inline-block;
+        }
+
+        .formula-box h3 span {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .formula-box .math {
+            font-size: 2rem;
+            text-align: center;
+            padding: 40px 20px;
+            background-color: var(--highlight);
+            border-radius: var(--border-radius);
+            overflow-x: auto;
+            margin: 35px 0;
+            color: var(--text);
+            font-family: 'Montserrat', sans-serif;
+            border: 1px solid var(--border-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.03);
+        }
+
+        .formula-box .parameters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 40px;
+        }
+
+        .parameter {
+            display: flex;
+            align-items: center;
+            background-color: var(--highlight);
+            padding: 18px;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            border: 1px solid var(--border-color);
+        }
+
+        .parameter:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+
+        .parameter-symbol {
+            font-weight: bold;
+            margin-right: 15px;
+            font-size: 1.4rem;
+            color: white;
+            min-width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            box-shadow: 0 5px 15px rgba(6, 190, 182, 0.3);
+        }
+
+        /* Caja de ejemplos con efecto de profundidad */
+        .example-box {
+            background-color: var(--card);
+            border-radius: var(--border-radius);
+            padding: 50px;
+            margin: 70px 0;
+            box-shadow: var(--box-shadow);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .example-box::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 150px;
+            height: 150px;
+            background: var(--primary-gradient);
+            opacity: 0.05;
+            border-radius: 0 0 0 100%;
+        }
+
+        .example-box:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--box-shadow-hover);
+        }
+
+        .example-box h3 {
+            color: var(--text);
+            margin-bottom: 35px;
+            padding-bottom: 20px;
+            border-bottom: 2px dashed var(--border-color);
+            font-size: 2rem;
+        }
+
+        .example-box h3 span {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .example-data {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 30px;
+            margin: 35px 0;
+        }
+
+        .data-item {
+            padding: 25px 20px;
+            background-color: var(--highlight);
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            text-align: center;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+
+        .data-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+
+        .data-item h4 {
+            font-size: 1rem;
+            color: var(--text-light);
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .data-item p {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 5px 0 0;
+        }
+
+        .step-calculation {
+            margin: 40px 0;
+            padding: 30px;
+            background-color: var(--highlight);
+            border-radius: var(--border-radius);
+            position: relative;
+            border: 1px solid var(--border-color);
+        }
+
+        .step-calculation::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 5px;
+            background-color: var(--primary);
+            border-radius: var(--border-radius) 0 0 var(--border-radius);
+        }
+
+        .step-calculation h4 {
+            margin-bottom: 15px;
+            color: var(--primary);
+            font-size: 1.3rem;
+        }
+
+        .step-calculation p {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .result {
+            font-size: 1.8rem;
+            text-align: center;
+            margin: 40px 0;
+            padding: 30px;
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: var(--border-radius);
+            font-weight: bold;
+            box-shadow: 0 10px 25px rgba(6, 190, 182, 0.25);
+            animation: pulse 2s infinite;
+        }
+
+        /* Sección de interpretación con tarjetas avanzadas */
+        .interpretation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 35px;
+            margin: 50px 0;
+        }
+
+        .interpretation-card {
+            border-radius: var(--border-radius);
+            padding: 40px 30px;
+            text-align: center;
+            transition: var(--transition);
+            box-shadow: var(--box-shadow);
+            background-color: var(--card);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .interpretation-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: var(--box-shadow-hover);
+        }
+
+        .interpretation-card h3 {
+            font-size: 1.8rem;
+            margin: 20px 0;
+            color: var(--text);
+        }
+
+        .interpretation-card.bad {
+            border-top: 5px solid #ED213A;
+        }
+
+        .interpretation-card.neutral {
+            border-top: 5px solid #F7971E;
+        }
+
+        .interpretation-card.good {
+            border-top: 5px solid #11998e;
+        }
+
+        .interpretation-icon {
+            font-size: 3.5rem;
+            margin-bottom: 25px;
+            display: inline-block;
+            width: 90px;
+            height: 90px;
+            line-height: 90px;
+            border-radius: 50%;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            animation: floatAnimation 3s ease-in-out infinite;
+        }
+
+        .bad .interpretation-icon {
+            background: var(--danger-gradient);
+            color: white;
+        }
+
+        .neutral .interpretation-icon {
+            background: var(--warning-gradient);
+            color: white;
+        }
+
+        .good .interpretation-icon {
+            background: var(--success-gradient);
+            color: white;
+        }
+
+        /* Sección de interpretación detallada */
+        .interpretation-detail {
+            padding: 60px 0;
+            background-color: var(--highlight);
+            margin: 80px 0;
+            border-radius: var(--border-radius-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .interpretation-detail::before {
+            content: "";
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            top: -150px;
+            right: -150px;
+            opacity: 0.05;
+        }
+
+        .interpretation-detail::after {
+            content: "";
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            bottom: -100px;
+            left: -100px;
+            opacity: 0.05;
+        }
+
+        .interpretation-detail h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+            color: var(--text);
+        }
+        
+        .interpretation-detail h2 span {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .interpretation-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 5;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            padding: 14px 30px;
+            border: none;
+            background: var(--card);
+            color: var(--text);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1.1rem;
+            margin: 0 10px 10px;
+            border-radius: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+
+        .tab-button:hover::before {
+            opacity: 1;
+        }
+
+        .tab-button:hover {
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(6, 190, 182, 0.2);
+        }
+
+        .tab-button.active {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 8px 20px rgba(6, 190, 182, 0.3);
+        }
+
+        .tab-content {
+            background: var(--card);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            position: relative;
+            z-index: 5;
+            max-width: 1000px;
+            margin: 0 auto;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .info-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .info-list li {
+            margin-bottom: 20px;
+            padding-left: 35px;
+            position: relative;
+        }
+
+        .info-list li::before {
+            content: '\f058';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: var(--primary);
+            font-size: 1.2rem;
+            position: absolute;
+            left: 0;
+            top: 2px;
+        }
+
+        .info-list li strong {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* Visualizations */
+        .chart-container {
+            background: var(--card);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin: 60px 0;
+            height: 600px; /* Tamaño aumentado del gráfico */
+            position: relative;
+            border: 1px solid var(--border-color);
+        }
+
+        .chart-title {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.8rem;
+        }
+
+        .chart-subtitle {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.95rem;
+            color: var(--text-light);
+        }
+
+        /* Tabla de clasificación */
+        .rating-table {
+            width: 100%;
+            margin: 20px 0 40px;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .rating-table th, .rating-table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .rating-table th {
+            background: var(--primary-gradient);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.9rem;
+        }
+
+        .rating-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .rating-table tr:nth-child(even) {
+            background-color: var(--highlight);
+        }
+
+        .rating-table tr {
+            transition: var(--transition);
+        }
+
+        .rating-table tr:hover {
+            background-color: var(--highlight);
+            transform: scale(1.01);
+        }
+
+        .rating-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 15px;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-danger {
+            background: var(--danger-gradient);
+        }
+
+        .badge-warning {
+            background: var(--warning-gradient);
+        }
+
+        .badge-success {
+            background: var(--success-gradient);
+        }
+
+        .badge-info {
+            background: var(--secondary-gradient);
+        }
+
+        /* Tabla comparativa avanzada */
+        .table-container {
+            margin: 60px 0;
+            overflow-x: auto;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        .comparison-table th, .comparison-table td {
+            padding: 20px;
+            text-align: left;
+            border: none;
+            position: relative;
+        }
+
+        .comparison-table th {
+            background: var(--primary-gradient);
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background-color: rgba(0,0,0,0.02);
+        }
+
+        .comparison-table tr {
+            border-bottom: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+
+        .comparison-table tbody tr:hover {
+            background-color: var(--highlight);
+        }
+
+        .comparison-table td:first-child {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* Calculadora avanzada */
+        .calculator {
+            background: var(--card);
+            padding: 50px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin: 70px 0;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .calculator::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            background: var(--primary-gradient);
+        }
+
+        .calculator h3 {
+            color: var(--text);
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 1.8rem;
+        }
+
+        .calculator h3 span {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1.1rem;
+            transition: var(--transition);
+            background-color: var(--background);
+            color: var(--text);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(6, 190, 182, 0.15);
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 30px;
+        }
+
+        .calculate-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 30px;
+            box-shadow: 0 10px 20px rgba(6, 190, 182, 0.2);
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(6, 190, 182, 0.3);
+        }
+
+        .calculator-results {
+            margin-top: 40px;
+            display: none;
+        }
+
+        .result-box {
+            background-color: var(--highlight);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+
+        .result-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+
+        .result-box h4 {
+            margin-bottom: 15px;
+            color: var(--primary);
+            font-size: 1.3rem;
+        }
+
+        .result-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--text);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 80px 0 40px;
+            margin-top: 100px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.15;
+        }
+
+        .footer-wave {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            transform: translateY(-99%);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 50px;
+            margin-bottom: 50px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .footer-column h3 {
+            font-size: 1.4rem;
+            margin-bottom: 25px;
+            position: relative;
+            padding-bottom: 15px;
+            display: inline-block;
+        }
+
+        .footer-column h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: white;
+            border-radius: 3px;
+        }
+
+        .footer-column ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .footer-column ul li {
+            margin-bottom: 12px;
+        }
+
+        .footer-column a {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            transition: var(--transition);
+            display: inline-block;
+        }
+
+        .footer-column a:hover {
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 40px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.7);
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Animaciones para elementos al desplazar */
+        .animate {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        .animate.from-left {
+            transform: translateX(-50px);
+        }
+
+        .animate.from-right {
+            transform: translateX(50px);
+        }
+
+        .animate.scale {
+            transform: scale(0.9);
+        }
+
+        .visible {
+            opacity: 1;
+            transform: translateY(0) translateX(0) scale(1);
+        }
+
+        /* Botón volver arriba */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 55px;
+            height: 55px;
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: var(--transition);
+            box-shadow: 0 5px 20px rgba(6, 190, 182, 0.4);
+            pointer-events: none;
+            z-index: 99;
+            font-size: 1.2rem;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-8px) scale(1.1);
+            box-shadow: 0 10px 25px rgba(6, 190, 182, 0.5);
+        }
+
+        /* Notificaciones y tooltips */
+        .tooltip {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100%);
+            background: var(--glass-effect);
+            backdrop-filter: blur(10px);
+            padding: 8px 15px;
+            border-radius: 5px;
+            color: var(--text);
+            font-size: 0.9rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%) rotate(45deg);
+            width: 10px;
+            height: 10px;
+            background: var(--glass-effect);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        *[data-tooltip]:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(calc(-100% - 10px));
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: var(--glass-effect);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            padding: 15px 25px 15px 20px;
+            border-left: 5px solid var(--primary);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transform: translateX(-150%);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification-icon {
+            font-size: 1.8rem;
+            margin-right: 15px;
+            color: var(--primary);
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .notification-message {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px;
+            margin-left: 10px;
+        }
+
+        /* Loading spinner para generación de PDF */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .loading-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-spinner {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid var(--primary);
+            animation: spin 1s linear infinite;
+            margin-bottom: 30px;
+        }
+
+        .loading-progress {
+            width: 300px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar-pdf {
+            height: 100%;
+            width: 0%;
+            background: var(--primary-gradient);
+            transition: width 0.3s ease;
+        }
+
+        .loading-message {
+            color: white;
+            font-size: 1.2rem;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Vista previa de impresión y PDF */
+        @media print {
+            body {
+                background-color: white !important;
+                color: black !important;
+                font-size: 12pt !important;
+            }
+            
+            .container {
+                max-width: 100% !important;
+                width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            
+            .nav, .progress-container, .back-to-top, 
+            .mobile-menu, .theme-toggle, .btn-download, 
+            .notification, .loading-overlay {
+                display: none !important;
+            }
+
+            h1, h2, h3, h4, h5, h6 {
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+            }
+            
+            p, li, figure, .card, .formula-box, .example-box, 
+            .interpretation-card, .tab-content, .step-calculation {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            
+            .section {
+                padding: 20mm 0 !important;
+                page-break-before: always !important;
+                break-before: always !important;
+            }
+            
+            .header {
+                padding: 0 !important;
+                height: auto !important;
+                margin-bottom: 20mm !important;
+                background: white !important;
+                color: black !important;
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+            }
+            
+            .header-buttons {
+                display: none !important;
+            }
+            
+            .header h1 {
+                color: black !important;
+                text-shadow: none !important;
+                -webkit-text-fill-color: black !important;
+                font-size: 24pt !important;
+            }
+            
+            .header p {
+                color: black !important;
+                font-size: 12pt !important;
+            }
+            
+            .section-title {
+                color: black !important;
+                font-size: 20pt !important;
+                margin-bottom: 10mm !important;
+            }
+            
+            .section-title span {
+                -webkit-text-fill-color: black !important;
+            }
+            
+            .subtitle {
+                font-size: 12pt !important;
+                color: #444 !important;
+                margin: 5mm 0 10mm !important;
+            }
+
+            .grid {
+                display: block !important;
+            }
+
+            .card, .formula-box, .example-box, .chart-container {
+                margin: 10mm 0 !important;
+                padding: 5mm !important;
+                box-shadow: none !important;
+                border: 1pt solid #ddd !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            .card h3, .formula-box h3, .example-box h3 {
+                color: black !important;
+                font-size: 14pt !important;
+            }
+            
+            .card h3 span, .formula-box h3 span, .example-box h3 span {
+                -webkit-text-fill-color: black !important;
+            }
+            
+            .math {
+                border: 1pt solid #ddd !important;
+                background: #f9f9f9 !important;
+                font-size: 12pt !important;
+                padding: 5mm !important;
+            }
+            
+            .interpretation-card {
+                width: 100% !important;
+                margin: 5mm 0 !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            
+            .interpretation-icon {
+                width: 20mm !important;
+                height: 20mm !important;
+                line-height: 20mm !important;
+                animation: none !important;
+                box-shadow: none !important;
+            }
+            
+            .bad .interpretation-icon, .neutral .interpretation-icon, .good .interpretation-icon {
+                background: #ddd !important;
+                color: black !important;
+            }
+            
+            .chart-container {
+                height: auto !important;
+                min-height: 60mm !important;
+            }
+            
+            table {
+                width: 100% !important;
+                margin: 5mm 0 !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            
+            th {
+                background: #eee !important;
+                color: black !important;
+            }
+            
+            .footer {
+                background: white !important;
+                color: black !important;
+                border-top: 1pt solid #ddd !important;
+                padding: 10mm 0 5mm !important;
+                margin-top: 20mm !important;
+            }
+            
+            .footer-column h3::after {
+                background: #ddd !important;
+            }
+            
+            .footer-column a {
+                color: #555 !important;
+            }
+        }
+
+        /* Media Queries */
+        @media (max-width: 1200px) {
+            .header h1 {
+                font-size: 3.5rem;
+            }
+            
+            .header p {
+                font-size: 1.3rem;
+            }
+            
+            .section-title {
+                font-size: 2.6rem;
+            }
+
+            .chart-container {
+                height: 550px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .header h1 {
+                font-size: 3rem;
+            }
+            
+            .formula-box, .example-box, .calculator {
+                padding: 35px;
+            }
+            
+            .formula-box .math {
+                font-size: 1.6rem;
+                padding: 25px 15px;
+            }
+            
+            .section {
+                padding: 90px 0;
+            }
+
+            .chart-container {
+                height: 500px;
+            }
+
+            .btn-download span {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 150px 0 100px;
+            }
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .header p {
+                font-size: 1.1rem;
+            }
+            
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                flex-direction: column;
+                background-color: var(--glass-effect);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                padding: 20px;
+                box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+                z-index: 100;
+            }
+            
+            .nav-links.active {
+                display: flex;
+            }
+            
+            .nav-links li {
+                margin: 12px 0;
+            }
+            
+            .mobile-menu {
+                display: block;
+            }
+            
+            .section {
+                padding: 70px 0;
+            }
+            
+            .section-title {
+                font-size: 2.2rem;
+                margin-bottom: 60px;
+            }
+            
+            .formula-box, .example-box, .calculator {
+                padding: 30px 25px;
+                margin: 50px 0;
+            }
+            
+            .formula-box .math {
+                font-size: 1.4rem;
+            }
+            
+            .interpretation-grid, .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .card-icon {
+                font-size: 7rem;
+            }
+            
+            .tab-button {
+                padding: 12px 25px;
+                font-size: 1rem;
+            }
+            
+            .tab-content {
+                padding: 25px;
+            }
+            
+            .result {
+                font-size: 1.4rem;
+                padding: 20px;
+            }
+
+            .chart-container {
+                height: 400px;
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .header {
+                padding: 130px 0 90px;
+            }
+            
+            .header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .header-buttons {
+                flex-direction: column;
+                gap: 15px;
+                align-items: center;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 1.1rem;
+                margin: -50px auto 50px;
+            }
+            
+            .formula-box .math {
+                font-size: 1.2rem;
+                padding: 15px 10px;
+                overflow-x: auto;
+            }
+            
+            .parameter-symbol {
+                min-width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+            
+            .example-data {
+                grid-template-columns: 1fr;
+            }
+            
+            .tab-button {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+                margin: 0 5px 10px;
+            }
+            
+            .result-value {
+                font-size: 1.6rem;
+            }
+            
+            .back-to-top {
+                right: 20px;
+                bottom: 20px;
+                width: 45px;
+                height: 45px;
+                font-size: 1rem;
+            }
+
+            .chart-container {
+                height: 350px;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-progress">
+            <div class="progress-bar-pdf" id="progressBarPdf"></div>
+        </div>
+        <div class="loading-message" id="loadingMessage">Generando PDF 4K... Por favor espere</div>
+    </div>
+
+    <!-- Indicador de Progreso de Desplazamiento -->
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- Notificación -->
+    <div class="notification" id="notification">
+        <i class="fas fa-info-circle notification-icon"></i>
+        <div class="notification-content">
+            <div class="notification-title">Notificación</div>
+            <div class="notification-message" id="notificationMessage"></div>
+        </div>
+        <button class="notification-close" id="notificationClose">×</button>
+    </div>
+
+    <!-- Navegación -->
+    <nav class="nav" id="navbar">
+        <div class="container">
+            <div class="nav-container">
+                <a href="#" class="logo"><i class="fas fa-chart-line"></i>Análisis de Capacidad</a>
+                <ul class="nav-links" id="navLinks">
+                    <li><a href="#intro">Introducción</a></li>
+                    <li><a href="#cp">Índice Cp</a></li>
+                    <li><a href="#cpk">Índice Cpk</a></li>
+                    <li><a href="#interpretation">Interpretación</a></li>
+                    <li><a href="#comparison">Comparativo</a></li>
+                    <li><a href="#calculator">Calculadora</a></li>
+                </ul>
+                <div class="action-buttons">
+                    <button class="btn-download" id="pdfDropdownBtn">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>Descargar PDF</span>
+                    </button>
+                    <div class="pdf-dropdown" id="pdfDropdown">
+                        <div class="pdf-dropdown-item" id="downloadPdfA4">
+                            <i class="fas fa-file-pdf"></i>
+                            <span>PDF A4 Optimizado</span>
+                        </div>
+                        <div class="pdf-dropdown-item" id="downloadPdfOneSheet">
+                            <i class="fas fa-file-alt"></i>
+                            <span>PDF Hoja Única</span>
+                        </div>
+                        <div class="pdf-dropdown-item" id="printFriendly">
+                            <i class="fas fa-print"></i>
+                            <span>Versión Imprimible</span>
+                        </div>
+                    </div>
+                    <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema"><i class="fas fa-moon"></i></button>
+                    <button class="mobile-menu" id="mobileMenu" aria-label="Menú"><i class="fas fa-bars"></i></button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header Section -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1>Análisis Avanzado de Capacidad de Proceso</h1>
+                <p>Domina las metodologías estadísticas para evaluar y optimizar la calidad en procesos industriales mediante los índices Cp y Cpk</p>
+                <div class="header-buttons">
+                    <a href="#calculator" class="btn btn-primary"><i class="fas fa-calculator"></i> Calculadora</a>
+                    <a href="#interpretation" class="btn btn-secondary"><i class="fas fa-chart-bar"></i> Interpretación</a>
+                </div>
+            </div>
+        </div>
+        <div class="wave">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 120">
+                <path fill="#F8FAFC" fill-opacity="1" d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,48C1120,43,1280,53,1360,58.7L1440,64L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z"></path>
+            </svg>
+        </div>
+    </header>
+
+    <!-- Sección de Introducción -->
+    <section class="section" id="intro">
+        <div class="container">
+            <h2 class="section-title animate">Introducción a los <span>Índices de Capacidad</span></h2>
+            <p class="subtitle animate">Herramientas estadísticas esenciales para evaluar el rendimiento y la conformidad de los procesos de producción</p>
+
+            <div class="grid">
+                <div class="card animate">
+                    <i class="fas fa-chart-pie card-icon"></i>
+                    <h3>¿Qué son los <span>Índices de Capacidad</span>?</h3>
+                    <p>Los índices de capacidad son métricas estadísticas que cuantifican objetivamente la aptitud de un proceso para cumplir con las especificaciones establecidas. Estos índices comparan la variabilidad natural del proceso con los límites de especificación definidos.</p>
+                    <p>Proporcionan una forma estandarizada de evaluar y comunicar qué tan bien un proceso puede producir resultados dentro de los requisitos establecidos.</p>
+                </div>
+
+                <div class="card animate">
+                    <i class="fas fa-bullseye card-icon"></i>
+                    <h3><span>Importancia</span> en Control de Calidad</h3>
+                    <p>El análisis de capacidad de proceso se ha convertido en un pilar fundamental de los sistemas modernos de gestión de calidad por múltiples razones:</p>
+                    <ul>
+                        <li>Proporciona un lenguaje común para evaluar procesos</li>
+                        <li>Permite la toma de decisiones basada en datos objetivos</li>
+                        <li>Facilita la identificación de oportunidades de mejora</li>
+                        <li>Ayuda a predecir el rendimiento futuro del proceso</li>
+                        <li>Constituye un elemento clave en metodologías Six Sigma y Lean</li>
+                    </ul>
+                </div>
+
+                <div class="card animate">
+                    <i class="fas fa-check-circle card-icon"></i>
+                    <h3><span>Requisitos</span> para el Análisis</h3>
+                    <p>Para que un análisis de capacidad sea válido y significativo, deben cumplirse las siguientes condiciones previas:</p>
+                    <ul>
+                        <li>El proceso debe estar bajo control estadístico</li>
+                        <li>Los datos deben seguir aproximadamente una distribución normal</li>
+                        <li>La muestra debe ser representativa (mínimo 30 datos)</li>
+                        <li>Los límites de especificación deben estar claramente definidos</li>
+                        <li>Las mediciones deben ser precisas y exactas</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Índice Cp -->
+    <section class="section" id="cp">
+        <div class="container">
+            <h2 class="section-title animate">Índice de Capacidad <span>Potencial (Cp)</span></h2>
+            <p class="subtitle animate">Evaluación de la dispersión natural del proceso en relación con los límites de especificación</p>
+
+            <div class="formula-box animate">
+                <h3>Definición y <span>Fórmula</span></h3>
+                <p>El índice Cp mide la capacidad potencial del proceso para cumplir con las especificaciones, considerando únicamente la dispersión natural del proceso en relación con el rango de especificación. Este índice no toma en cuenta la centralidad del proceso.</p>
+                
+                <div class="math">
+                    Cp = \frac{LSE - LSI}{6\sigma}
+                </div>
+                
+                <div class="parameters">
+                    <div class="parameter">
+                        <span class="parameter-symbol">LSE</span>
+                        <span>Límite Superior de Especificación</span>
+                    </div>
+                    <div class="parameter">
+                        <span class="parameter-symbol">LSI</span>
+                        <span>Límite Inferior de Especificación</span>
+                    </div>
+                    <div class="parameter">
+                        <span class="parameter-symbol">σ</span>
+                        <span>Desviación Estándar del proceso</span>
+                    </div>
+                    <div class="parameter">
+                        <span class="parameter-symbol">6σ</span>
+                        <span>Dispersión natural del proceso (99.73% de los datos)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="example-box animate">
+                <h3>Ejemplo Práctico: <span>Fabricación de Tornillos</span></h3>
+                
+                <p>Un proceso produce tornillos con las siguientes características:</p>
+                
+                <div class="example-data">
+                    <div class="data-item">
+                        <h4>Límite Inferior de Especificación:</h4>
+                        <p>9 mm</p>
+                    </div>
+                    <div class="data-item">
+                        <h4>Límite Superior de Especificación:</h4>
+                        <p>11 mm</p>
+                    </div>
+                    <div class="data-item">
+                        <h4>Desviación Estándar:</h4>
+                        <p>0.3711 mm</p>
+                    </div>
+                </div>
+                
+                <div class="step-calculation">
+                    <h4>Cálculo del Cp:</h4>
+                    <p>Cp = (LSE - LSI) / (6 × σ)</p>
+                    <p>Cp = (11 - 9) / (6 × 0.3711)</p>
+                    <p>Cp = 2 / 2.2266</p>
+                </div>
+                
+                <div class="result">
+                    Cp = 0.8963
+                </div>
+                
+                <p>Este valor de Cp (0.8963) indica que el proceso no es completamente capaz ya que el valor es menor que 1. La variabilidad natural del proceso (6σ = 2.2266 mm) es mayor que el rango de especificación (2 mm), lo que significa que el proceso tiene más variación de la que puede tolerar el rango de especificaciones.</p>
+            </div>
+
+            <div class="interpretation-grid">
+                <div class="interpretation-card bad animate">
+                    <div class="interpretation-icon"><i class="fas fa-times-circle"></i></div>
+                    <h3>Cp < 1</h3>
+                    <p>El proceso <strong>no es capaz</strong> de cumplir con las especificaciones</p>
+                    <p>La variabilidad natural del proceso es mayor que el rango de especificación.</p>
+                    <p>Se requieren mejoras significativas para reducir la variabilidad.</p>
+                </div>
+                
+                <div class="interpretation-card neutral animate">
+                    <div class="interpretation-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <h3>Cp = 1</h3>
+                    <p>El proceso es <strong>apenas capaz</strong> de cumplir con las especificaciones</p>
+                    <p>La variabilidad natural del proceso es igual al rango de especificación.</p>
+                    <p>Aproximadamente 0.27% de los productos estarán fuera de especificación.</p>
+                </div>
+                
+                <div class="interpretation-card good animate">
+                    <div class="interpretation-icon"><i class="fas fa-check-circle"></i></div>
+                    <h3>Cp > 1</h3>
+                    <p>El proceso es <strong>capaz</strong> de cumplir con las especificaciones</p>
+                    <p>La variabilidad natural del proceso es menor que el rango de especificación.</p>
+                    <p>Cuanto mayor sea el valor, mejor será la capacidad del proceso.</p>
+                </div>
+            </div>
+
+            <div class="chart-container animate">
+                <h3 class="chart-title">Visualización del Índice Cp</h3>
+                <canvas id="cpChart"></canvas>
+                <p class="chart-subtitle">La gráfica muestra la distribución del proceso en relación con los límites de especificación, ilustrando visualmente el concepto de Cp.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Índice Cpk -->
+    <section class="section" id="cpk">
+        <div class="container">
+            <h2 class="section-title animate">Índice de Capacidad <span>Real (Cpk)</span></h2>
+            <p class="subtitle animate">Evaluación de la capacidad del proceso considerando tanto la variabilidad como la centralidad</p>
+
+            <div class="formula-box animate">
+                <h3>Definición y <span>Fórmula</span></h3>
+                <p>El índice Cpk mide la capacidad real del proceso, considerando tanto la variabilidad como la centralidad respecto a los límites de especificación. A diferencia del Cp, el Cpk evalúa qué tan centrado está el proceso y siempre es menor o igual que el Cp.</p>
+                
+                <div class="math">
+                    Cpk = \min(Cpu, Cpl)
+                </div>
+                
+                <div class="parameters">
+                    <div class="parameter">
+                        <span class="parameter-symbol">Cpu</span>
+                        <span>Índice de capacidad superior = (LSE - μ) / (3σ)</span>
+                    </div>
+                    <div class="parameter">
+                        <span class="parameter-symbol">Cpl</span>
+                        <span>Índice de capacidad inferior = (μ - LSI) / (3σ)</span>
+                    </div>
+                    <div class="parameter">
+                        <span class="parameter-symbol">μ</span>
+                        <span>Media del proceso (promedio de las mediciones)</span>
+                    </div>
+                    <div class="parameter">
+                        <span class="parameter-symbol">σ</span>
+                        <span>Desviación estándar del proceso</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="example-box animate">
+                <h3>Continuando el <span>Ejemplo Anterior</span></h3>
+                
+                <div class="example-data">
+                    <div class="data-item">
+                        <h4>Límite Inferior de Especificación:</h4>
+                        <p>9 mm</p>
+                    </div>
+                    <div class="data-item">
+                        <h4>Límite Superior de Especificación:</h4>
+                        <p>11 mm</p>
+                    </div>
+                    <div class="data-item">
+                        <h4>Media del proceso:</h4>
+                        <p>9.9355 mm</p>
+                    </div>
+                    <div class="data-item">
+                        <h4>Desviación Estándar:</h4>
+                        <p>0.3711 mm</p>
+                    </div>
+                </div>
+                
+                <div class="step-calculation">
+                    <h4>Cálculo del Cpu (Índice de capacidad superior):</h4>
+                    <p>Cpu = (LSE - μ) / (3 × σ)</p>
+                    <p>Cpu = (11 - 9.9355) / (3 × 0.3711)</p>
+                    <p>Cpu = 1.0645 / 1.1133</p>
+                    <p>Cpu = 0.9561</p>
+                </div>
+                
+                <div class="step-calculation">
+                    <h4>Cálculo del Cpl (Índice de capacidad inferior):</h4>
+                    <p>Cpl = (μ - LSI) / (3 × σ)</p>
+                    <p>Cpl = (9.9355 - 9) / (3 × 0.3711)</p>
+                    <p>Cpl = 0.9355 / 1.1133</p>
+                    <p>Cpl = 0.8402</p>
+                </div>
+                
+                <div class="result">
+                    Cpk = min(0.9561, 0.8402) = 0.8402
+                </div>
+                
+                <p>El valor de Cpk (0.8402) es menor que el valor de Cp (0.8963), lo que indica que el proceso no está perfectamente centrado entre los límites de especificación. El proceso está más cerca del límite inferior que del superior, por lo que hay mayor riesgo de producir piezas por debajo del límite inferior de especificación.</p>
+            </div>
+
+            <div class="interpretation-grid">
+                <div class="interpretation-card bad animate">
+                    <div class="interpretation-icon"><i class="fas fa-times-circle"></i></div>
+                    <h3>Cpk < 1</h3>
+                    <p>El proceso <strong>no es capaz</strong> de cumplir con las especificaciones</p>
+                    <p>Se están produciendo o se producirán unidades fuera de las especificaciones.</p>
+                    <p>Es necesario mejorar el proceso ajustando la media, reduciendo la variabilidad o ambas.</p>
+                </div>
+                
+                <div class="interpretation-card neutral animate">
+                    <div class="interpretation-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <h3>Cpk = 1</h3>
+                    <p>El proceso es <strong>apenas capaz</strong> de cumplir con las especificaciones</p>
+                    <p>La media del proceso está a una distancia de 3σ del límite de especificación más cercano.</p>
+                    <p>Aproximadamente 0.135% de los productos estarán fuera de especificación.</p>
+                </div>
+                
+                <div class="interpretation-card good animate">
+                    <div class="interpretation-icon"><i class="fas fa-check-circle"></i></div>
+                    <h3>Cpk > 1</h3>
+                    <p>El proceso es <strong>capaz</strong> de cumplir con las especificaciones</p>
+                    <p>Se producen muy pocas unidades fuera de especificación.</p>
+                    <p>La industria generalmente exige Cpk ≥ 1.33 (proceso 4-sigma) como mínimo aceptable.</p>
+                </div>
+            </div>
+
+            <div class="chart-container animate">
+                <h3 class="chart-title">Visualización del Índice Cpk</h3>
+                <canvas id="cpkChart"></canvas>
+                <p class="chart-subtitle">La gráfica muestra la distribución del proceso y su centralidad en relación con los límites de especificación, ilustrando visualmente el concepto de Cpk.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección de Interpretación Detallada -->
+    <section class="section" id="interpretation">
+        <div class="container">
+            <h2 class="section-title animate">Interpretación <span>Detallada</span></h2>
+            <p class="subtitle animate">Análisis profundo de los índices Cp y Cpk para una mejor toma de decisiones en control de procesos</p>
+
+            <div class="interpretation-detail">
+                <h2>Guía completa para interpretar <span>Cp y Cpk</span></h2>
+                
+                <div class="interpretation-tabs">
+                    <button class="tab-button active" data-tab="cp-tab">Interpretación Cp</button>
+                    <button class="tab-button" data-tab="cpk-tab">Interpretación Cpk</button>
+                    <button class="tab-button" data-tab="relation-tab">Relación Cp-Cpk</button>
+                </div>
+                
+                <div class="tab-content">
+                    <div class="tab-panel active" id="cp-tab">
+                        <h3>Interpretación del Índice Cp</h3>
+                        
+                        <p>El índice Cp evalúa la capacidad potencial del proceso, comparando la amplitud de la especificación con la dispersión natural del proceso. Es una medida de "lo que podría ser" si el proceso estuviera perfectamente centrado.</p>
+                        
+                        <table class="rating-table">
+                            <thead>
+                                <tr>
+                                    <th>Valor Cp</th>
+                                    <th>Clasificación</th>
+                                    <th>Interpretación</th>
+                                    <th>% Defectos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Cp < 0.67</td>
+                                    <td><span class="rating-badge badge-danger">Inadecuado</span></td>
+                                    <td>Proceso totalmente incapaz</td>
+                                    <td>> 4.5%</td>
+                                </tr>
+                                <tr>
+                                    <td>0.67 ≤ Cp < 1.00</td>
+                                    <td><span class="rating-badge badge-warning">Deficiente</span></td>
+                                    <td>Proceso no capaz</td>
+                                    <td>0.27% - 4.5%</td>
+                                </tr>
+                                <tr>
+                                    <td>1.00 ≤ Cp < 1.33</td>
+                                    <td><span class="rating-badge badge-warning">Marginal</span></td>
+                                    <td>Proceso apenas capaz</td>
+                                    <td>0.007% - 0.27%</td>
+                                </tr>
+                                <tr>
+                                    <td>1.33 ≤ Cp < 1.67</td>
+                                    <td><span class="rating-badge badge-success">Capaz</span></td>
+                                    <td>Proceso 4-sigma</td>
+                                    <td>0.0001% - 0.007%</td>
+                                </tr>
+                                <tr>
+                                    <td>1.67 ≤ Cp < 2.00</td>
+                                    <td><span class="rating-badge badge-success">Muy Capaz</span></td>
+                                    <td>Proceso 5-sigma</td>
+                                    <td>0.0000001% - 0.0001%</td>
+                                </tr>
+                                <tr>
+                                    <td>Cp ≥ 2.00</td>
+                                    <td><span class="rating-badge badge-info">Excelente</span></td>
+                                    <td>Proceso 6-sigma</td>
+                                    <td>< 0.0000001%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <h4>Recomendaciones según el valor Cp:</h4>
+                        
+                        <ul class="info-list">
+                            <li>Si <strong>Cp < 1</strong>: El proceso no es capaz. Se debe identificar y reducir las causas de variación. Considerar rediseñar el proceso o actualizar el equipo.</li>
+                            <li>Si <strong>1 ≤ Cp < 1.33</strong>: El proceso es marginalmente capaz. Implementar controles rigurosos y buscar oportunidades de mejora para reducir la variabilidad.</li>
+                            <li>Si <strong>Cp ≥ 1.33</strong>: El proceso es capaz. Mantener el control estadístico y trabajar en el centrado del proceso.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tab-panel" id="cpk-tab">
+                        <h3>Interpretación del Índice Cpk</h3>
+                        
+                        <p>El índice Cpk evalúa la capacidad real del proceso, considerando tanto la dispersión como la centralidad. Es una medida de "lo que realmente es" el proceso en este momento.</p>
+                        
+                        <table class="rating-table">
+                            <thead>
+                                <tr>
+                                    <th>Valor Cpk</th>
+                                    <th>Clasificación</th>
+                                    <th>Interpretación</th>
+                                    <th>% Defectos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Cpk < 0.67</td>
+                                    <td><span class="rating-badge badge-danger">Inadecuado</span></td>
+                                    <td>Proceso totalmente incapaz</td>
+                                    <td>> 2.3%</td>
+                                </tr>
+                                <tr>
+                                    <td>0.67 ≤ Cpk < 1.00</td>
+                                    <td><span class="rating-badge badge-warning">Deficiente</span></td>
+                                    <td>Proceso no capaz</td>
+                                    <td>0.135% - 2.3%</td>
+                                </tr>
+                                <tr>
+                                    <td>1.00 ≤ Cpk < 1.33</td>
+                                    <td><span class="rating-badge badge-warning">Marginal</span></td>
+                                    <td>Proceso apenas capaz</td>
+                                    <td>0.0034% - 0.135%</td>
+                                </tr>
+                                <tr>
+                                    <td>1.33 ≤ Cpk < 1.67</td>
+                                    <td><span class="rating-badge badge-success">Capaz</span></td>
+                                    <td>Proceso 4-sigma</td>
+                                    <td>0.00006% - 0.0034%</td>
+                                </tr>
+                                <tr>
+                                    <td>1.67 ≤ Cpk < 2.00</td>
+                                    <td><span class="rating-badge badge-success">Muy Capaz</span></td>
+                                    <td>Proceso 5-sigma</td>
+                                    <td>0.0000005% - 0.00006%</td>
+                                </tr>
+                                <tr>
+                                    <td>Cpk ≥ 2.00</td>
+                                    <td><span class="rating-badge badge-info">Excelente</span></td>
+                                    <td>Proceso 6-sigma</td>
+                                    <td>< 0.0000005%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <h4>Recomendaciones según el valor Cpk:</h4>
+                        
+                        <ul class="info-list">
+                            <li>Si <strong>Cpk < 1</strong>: El proceso no es capaz. Se deben tomar acciones inmediatas para mejorar la centralidad y/o reducir la variabilidad.</li>
+                            <li>Si <strong>1 ≤ Cpk < 1.33</strong>: El proceso es marginalmente capaz. Implementar mejoras para centrar el proceso y reducir la variabilidad.</li>
+                            <li>Si <strong>Cpk ≥ 1.33</strong>: El proceso es capaz. Mantener el control e implementar estrategias para prevenir cambios o desviaciones.</li>
+                            <li>Si <strong>Cpk ≥ 1.67</strong>: El proceso es altamente capaz. Establecer como benchmark e implementar mantenimiento preventivo para garantizar estabilidad.</li>
+                        </ul>
+                        
+                        <p>En industrias críticas como aeroespacial, médica o automotriz, se suelen exigir valores de Cpk ≥ 1.67 o incluso 2.0 para procesos nuevos o críticos.</p>
+                    </div>
+                    
+                    <div class="tab-panel" id="relation-tab">
+                        <h3>Relación entre Cp y Cpk</h3>
+                        
+                        <p>La comparación entre los valores de Cp y Cpk proporciona información valiosa sobre el estado del proceso:</p>
+                        
+                        <ul class="info-list">
+                            <li>Si <strong>Cp = Cpk</strong>: El proceso está perfectamente centrado. La media del proceso coincide exactamente con el punto medio de las especificaciones.</li>
+                            <li>Si <strong>Cp > Cpk</strong>: El proceso no está centrado. La diferencia entre Cp y Cpk indica el potencial de mejora que se podría alcanzar centrando el proceso.</li>
+                            <li>Cuanto mayor sea la diferencia entre <strong>Cp y Cpk</strong>, mayor será el descentrado del proceso.</li>
+                            <li>El valor de <strong>k = (Cp - Cpk)/Cp</strong> expresa el factor de descentrado como porcentaje.</li>
+                        </ul>
+                        
+                        <h4>Estrategias de mejora según la relación Cp-Cpk:</h4>
+                        
+                        <table class="rating-table">
+                            <thead>
+                                <tr>
+                                    <th>Escenario</th>
+                                    <th>Diagnóstico</th>
+                                    <th>Estrategia de mejora</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Cp bajo, Cpk bajo</td>
+                                    <td>Proceso con alta variabilidad y posiblemente descentrado</td>
+                                    <td>Atacar primero las fuentes de variabilidad (mejorar Cp), luego trabajar en el centrado</td>
+                                </tr>
+                                <tr>
+                                    <td>Cp alto, Cpk bajo</td>
+                                    <td>Proceso con baja variabilidad pero significativamente descentrado</td>
+                                    <td>Centralizar el proceso para que la media se aproxime al punto medio de las especificaciones</td>
+                                </tr>
+                                <tr>
+                                    <td>Cp bajo, Cpk cercano a Cp</td>
+                                    <td>Proceso con alta variabilidad aunque bien centrado</td>
+                                    <td>Reducir la variabilidad mediante mejor control del proceso</td>
+                                </tr>
+                                <tr>
+                                    <td>Cp alto, Cpk alto</td>
+                                    <td>Proceso excelente</td>
+                                    <td>Mantener control estadístico, considerar reducir inspecciones o ampliar especificaciones</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Comparativa -->
+    <section class="section" id="comparison">
+        <div class="container">
+            <h2 class="section-title animate">Comparación <span>Cp vs Cpk</span></h2>
+            <p class="subtitle animate">Análisis comparativo detallado entre los índices de capacidad potencial y real</p>
+
+            <div class="table-container animate">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Característica</th>
+                            <th>Cp</th>
+                            <th>Cpk</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Definición</td>
+                            <td>Capacidad potencial del proceso</td>
+                            <td>Capacidad real del proceso</td>
+                        </tr>
+                        <tr>
+                            <td>Considera</td>
+                            <td>Solo la dispersión del proceso</td>
+                            <td>Dispersión y centralidad del proceso</td>
+                        </tr>
+                        <tr>
+                            <td>Fórmula</td>
+                            <td>Cp = (LSE - LSI) / (6σ)</td>
+                            <td>Cpk = min[(LSE - μ) / (3σ), (μ - LSI) / (3σ)]</td>
+                        </tr>
+                        <tr>
+                            <td>Relación</td>
+                            <td colspan="2">Cp ≥ Cpk</td>
+                        </tr>
+                        <tr>
+                            <td>Igualdad</td>
+                            <td colspan="2">Cp = Cpk cuando el proceso está perfectamente centrado</td>
+                        </tr>
+                        <tr>
+                            <td>Interpretación</td>
+                            <td>¿Qué tan capaz podría ser el proceso si estuviera perfectamente centrado?</td>
+                            <td>¿Qué tan capaz es el proceso con su centralidad actual?</td>
+                        </tr>
+                        <tr>
+                            <td>Uso principal</td>
+                            <td>Evaluar el potencial del proceso</td>
+                            <td>Evaluar el rendimiento actual del proceso</td>
+                        </tr>
+                        <tr>
+                            <td>Limitaciones</td>
+                            <td>No considera la posición del proceso con respecto a las especificaciones</td>
+                            <td>Puede ser engañoso si el proceso no está bajo control estadístico</td>
+                        </tr>
+                        <tr>
+                            <td>Aplicación ideal</td>
+                            <td>Evaluar procesos nuevos o rediseñados</td>
+                            <td>Monitoreo continuo de procesos en operación</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="grid">
+                <div class="card animate from-left">
+                    <h3>Valores Objetivo <span>por Industria</span></h3>
+                    <p>Los valores objetivo de Cp y Cpk varían según la industria y criticidad del proceso:</p>
+                    <ul>
+                        <li><strong>Industria General:</strong> Cpk ≥ 1.33 (4-sigma)</li>
+                        <li><strong>Automotriz:</strong> Cpk ≥ 1.67 (5-sigma)</li>
+                        <li><strong>Médica/Farmacéutica:</strong> Cpk ≥ 1.67 (5-sigma)</li>
+                        <li><strong>Aeroespacial:</strong> Cpk ≥ 2.0 (6-sigma)</li>
+                        <li><strong>Electrónica:</strong> Cpk ≥ 1.5 a 2.0</li>
+                        <li><strong>Alimentaria:</strong> Cpk ≥ 1.33 a 1.5</li>
+                    </ul>
+                    <p>Para características críticas de seguridad, se suelen requerir valores más altos independientemente de la industria.</p>
+                </div>
+
+                <div class="card animate scale">
+                    <h3><span>Estrategias</span> de Mejora</h3>
+                    <p>Para mejorar estos índices, se pueden implementar las siguientes estrategias:</p>
+                    <ul>
+                        <li><strong>Para mejorar Cp:</strong>
+                            <ul>
+                                <li>Identificar y eliminar causas de variación</li>
+                                <li>Mejorar sistemas de medición</li>
+                                <li>Actualizar equipos y herramientas</li>
+                                <li>Estandarizar procedimientos</li>
+                                <li>Capacitar al personal</li>
+                            </ul>
+                        </li>
+                        <li><strong>Para mejorar Cpk:</strong>
+                            <ul>
+                                <li>Todas las acciones para mejorar Cp</li>
+                                <li>Ajustar la media del proceso</li>
+                                <li>Implementar sistemas de control automático</li>
+                                <li>Realizar ajustes más frecuentes</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card animate from-right">
+                    <h3>Más allá de <span>Cp y Cpk</span></h3>
+                    <p>Existen otros índices de capacidad para situaciones específicas:</p>
+                    <ul>
+                        <li><strong>Pp y Ppk:</strong> Índices de desempeño del proceso (utilizan desviación estándar total)</li>
+                        <li><strong>Cpm:</strong> Considera la desviación respecto al valor objetivo</li>
+                        <li><strong>Cpmk:</strong> Combina Cpk con Cpm</li>
+                        <li><strong>Z:</strong> Índice Z - distancia en desviaciones estándar entre la media del proceso y el límite de especificación más cercano</li>
+                        <li><strong>Cpk multivariante:</strong> Para procesos con múltiples características correlacionadas</li>
+                        <li><strong>Índices no normales:</strong> Para datos que siguen otras distribuciones</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Calculadora -->
+    <section class="section" id="calculator">
+        <div class="container">
+            <h2 class="section-title animate">Calculadora <span>Interactiva</span></h2>
+            <p class="subtitle animate">Herramienta avanzada para calcular e interpretar los índices de capacidad de proceso</p>
+
+            <div class="calculator animate">
+                <h3>Calculadora de <span>Índices de Capacidad</span></h3>
+                <form id="capacityForm">
+                    <div class="calculator-grid">
+                        <div class="input-group">
+                            <label for="lsl"><i class="fas fa-arrow-down"></i> Límite Inferior (LSI):</label>
+                            <input type="number" id="lsl" step="any" placeholder="Ej: 9.0" required>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="usl"><i class="fas fa-arrow-up"></i> Límite Superior (LSE):</label>
+                            <input type="number" id="usl" step="any" placeholder="Ej: 11.0" required>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="mean"><i class="fas fa-bullseye"></i> Media del Proceso (μ):</label>
+                            <input type="number" id="mean" step="any" placeholder="Ej: 9.9355" required>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="stdDev"><i class="fas fa-chart-bar"></i> Desviación Estándar (σ):</label>
+                            <input type="number" id="stdDev" step="any" placeholder="Ej: 0.3711" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="calculate-btn"><i class="fas fa-calculator"></i> Calcular Índices</button>
+                </form>
+                
+                <div class="calculator-results" id="results">
+                    <div class="example-data">
+                        <div class="result-box">
+                            <h4>Cp:</h4>
+                            <div id="cpResult" class="result-value">-</div>
+                        </div>
+                        
+                        <div class="result-box">
+                            <h4>Cpu:</h4>
+                            <div id="cpuResult" class="result-value">-</div>
+                        </div>
+                        
+                        <div class="result-box">
+                            <h4>Cpl:</h4>
+                            <div id="cplResult" class="result-value">-</div>
+                        </div>
+                        
+                        <div class="result-box">
+                            <h4>Cpk:</h4>
+                            <div id="cpkResult" class="result-value">-</div>
+                        </div>
+                    </div>
+                    
+                    <div class="result-box">
+                        <h4><i class="fas fa-info-circle"></i> Interpretación:</h4>
+                        <div id="interpretation">-</div>
+                    </div>
+
+                    <div class="chart-container">
+                        <h3 class="chart-title">Visualización de Distribución y Capacidad</h3>
+                        <canvas id="processCapabilityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <svg class="footer-wave" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 120">
+            <path fill="#F8FAFC" d="M0,64L80,80C160,96,320,128,480,128C640,128,800,96,960,90.7C1120,85,1280,107,1360,117.3L1440,128L1440,0L1360,0C1280,0,1120,0,960,0C800,0,640,0,480,0C320,0,160,0,80,0L0,0Z"></path>
+        </svg>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-column">
+                    <h3>Análisis de Capacidad</h3>
+                    <ul>
+                        <li><a href="#intro">Introducción</a></li>
+                        <li><a href="#cp">Índice Cp</a></li>
+                        <li><a href="#cpk">Índice Cpk</a></li>
+                        <li><a href="#interpretation">Interpretación</a></li>
+                        <li><a href="#comparison">Comparación</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-column">
+                    <h3>Herramientas</h3>
+                    <ul>
+                        <li><a href="#calculator">Calculadora Cp y Cpk</a></li>
+                        <li><a href="#">Control Estadístico</a></li>
+                        <li><a href="#">Diseño de Experimentos</a></li>
+                        <li><a href="#">Análisis R&R</a></li>
+                        <li><a href="#">DMAIC</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-column">
+                    <h3>Recursos</h3>
+                    <ul>
+                        <li><a href="#">Glosario</a></li>
+                        <li><a href="#">Referencias</a></li>
+                        <li><a href="#">Plantillas Excel</a></li>
+                        <li><a href="#">Ejemplos Prácticos</a></li>
+                        <li><a href="#">Preguntas Frecuentes</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-column">
+                    <h3>Contacto</h3>
+                    <ul>
+                        <li><a href="#"><i class="fas fa-envelope"></i> info@cpkanalysis.com</a></li>
+                        <li><a href="#"><i class="fas fa-phone"></i> +1 (555) 123-4567</a></li>
+                        <li><a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a></li>
+                        <li><a href="#"><i class="fab fa-github"></i> GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2025 Análisis de Capacidad de Proceso | Desarrollado por PFfrank13</p>
+                <p>Última actualización: 28 de mayo, 2025</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Botón Volver Arriba -->
+    <div class="back-to-top" id="backToTop"><i class="fas fa-chevron-up"></i></div>
+
+    <!-- Script para funcionalidades -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle de Tema (Claro/Oscuro)
+            const themeToggle = document.getElementById('themeToggle');
+            const body = document.body;
+            const icon = themeToggle.querySelector('i');
+            
+            // Verificar y establecer el tema preferido
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                body.setAttribute('data-theme', 'dark');
+                icon.className = 'fas fa-sun';
+            }
+            
+            themeToggle.addEventListener('click', function() {
+                if (body.hasAttribute('data-theme')) {
+                    body.removeAttribute('data-theme');
+                    icon.className = 'fas fa-moon';
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    body.setAttribute('data-theme', 'dark');
+                    icon.className = 'fas fa-sun';
+                    localStorage.setItem('theme', 'dark');
+                }
+            });
+            
+            // Menú de descarga PDF
+            const pdfDropdownBtn = document.getElementById('pdfDropdownBtn');
+            const pdfDropdown = document.getElementById('pdfDropdown');
+            
+            pdfDropdownBtn.addEventListener('click', function() {
+                pdfDropdown.classList.toggle('active');
+            });
+            
+            // Cerrar dropdown al hacer clic fuera
+            document.addEventListener('click', function(event) {
+                if (!pdfDropdownBtn.contains(event.target) && !pdfDropdown.contains(event.target)) {
+                    pdfDropdown.classList.remove('active');
+                }
+            });
+            
+            // Botones de descarga de PDF
+            const downloadPdfA4 = document.getElementById('downloadPdfA4');
+            const downloadPdfOneSheet = document.getElementById('downloadPdfOneSheet');
+            const printFriendly = document.getElementById('printFriendly');
+            
+            downloadPdfA4.addEventListener('click', function() {
+                generatePDF('a4');
+            });
+            
+            downloadPdfOneSheet.addEventListener('click', function() {
+                generatePDF('oneSheet');
+            });
+            
+            printFriendly.addEventListener('click', function() {
+                window.print();
+            });
+            
+            // Función para generar PDF optimizado
+            function generatePDF(format) {
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                const progressBarPdf = document.getElementById('progressBarPdf');
+                const loadingMessage = document.getElementById('loadingMessage');
+                
+                // Mostrar overlay y mensaje inicial
+                loadingOverlay.classList.add('show');
+                loadingMessage.textContent = 'Preparando contenido para PDF...';
+                progressBarPdf.style.width = '10%';
+
+                setTimeout(() => {
+                    loadingMessage.textContent = 'Optimizando para formato de página...';
+                    progressBarPdf.style.width = '25%';
+
+                    setTimeout(() => {
+                        loadingMessage.textContent = 'Procesando gráficos y fórmulas...';
+                        progressBarPdf.style.width = '45%';
+
+                        setTimeout(() => {
+                            loadingMessage.textContent = 'Generando PDF en alta resolución...';
+                            progressBarPdf.style.width = '70%';
+
+                            setTimeout(() => {
+                                loadingMessage.textContent = 'Finalizando y preparando descarga...';
+                                progressBarPdf.style.width = '90%';
+
+                                // Crear nuevo objeto jsPDF para descarga
+                                window.jsPDF = window.jspdf.jsPDF;
+                                
+                                // Configuración del PDF según formato
+                                if (format === 'a4') {
+                                    // Configuración para formato A4 optimizado con múltiples páginas
+                                    const pdf = new jsPDF({
+                                        orientation: 'portrait',
+                                        unit: 'mm',
+                                        format: 'a4',
+                                        compress: true,
+                                        precision: 4
+                                    });
+
+                                    // Título del documento
+                                    document.title = 'Análisis de Capacidad de Proceso - Cp y Cpk';
+                                    
+                                    // Configurar contenido para impresión por secciones
+                                    const sections = document.querySelectorAll('.section');
+                                    const header = document.querySelector('.header-content');
+                                    
+                                    // Función para agregar saltos de página
+                                    const addSectionToPdf = async (element, index) => {
+                                        if (index > 0) {
+                                            pdf.addPage();
+                                        }
+                                        
+                                        // Capturar sección actual
+                                        const canvas = await html2canvas(element, {
+                                            scale: 2,
+                                            useCORS: true,
+                                            logging: false,
+                                            allowTaint: true,
+                                            backgroundColor: body.hasAttribute('data-theme') ? '#1A202C' : '#FFFFFF'
+                                        });
+                                        
+                                        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                                        const pageWidth = pdf.internal.pageSize.getWidth();
+                                        const pageHeight = pdf.internal.pageSize.getHeight();
+                                        const imgWidth = pageWidth - 20; // Margen de 10mm a cada lado
+                                        const imgHeight = canvas.height * imgWidth / canvas.width;
+                                        
+                                        // Ajustar tamaño y centrar la imagen
+                                        let position = 10; // Margen superior de 10mm
+                                        if (index === 0) {
+                                            position = 20; // Más espacio para la primera página (título)
+                                        }
+                                        
+                                        pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
+                                        
+                                        return imgHeight + position + 10; // Altura total añadida + margen inferior
+                                    };
+
+                                    let currentPage = 0;
+                                    let lastPosition = 0;
+                                    
+                                    // Añadir cabecera en la primera página
+                                    html2canvas(header, {
+                                        scale: 2,
+                                        useCORS: true,
+                                        logging: false,
+                                        allowTaint: true,
+                                        backgroundColor: 'transparent'
+                                    }).then(canvas => {
+                                        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                                        const headerWidth = pdf.internal.pageSize.getWidth() - 40;
+                                        const headerHeight = canvas.height * headerWidth / canvas.width;
+                                        
+                                        // Añadir cabecera centrada
+                                        pdf.addImage(imgData, 'JPEG', 20, 20, headerWidth, headerHeight);
+                                        
+                                        // Procesar cada sección
+                                        processNextSection(0);
+                                        
+                                        function processNextSection(index) {
+                                            if (index < sections.length) {
+                                                // Si no es la primera sección, añadir nueva página
+                                                if (index > 0) {
+                                                    pdf.addPage();
+                                                    currentPage++;
+                                                    lastPosition = 20;
+                                                } else {
+                                                    lastPosition = headerHeight + 30;
+                                                }
+                                                
+                                                // Capturar la sección actual
+                                                html2canvas(sections[index], {
+                                                    scale: 2,
+                                                    useCORS: true,
+                                                    logging: false,
+                                                    allowTaint: true,
+                                                    backgroundColor: body.hasAttribute('data-theme') ? '#1A202C' : '#FFFFFF',
+                                                    width: sections[index].offsetWidth,
+                                                    height: Math.min(sections[index].offsetHeight, 1200) // Limitar altura para evitar problemas
+                                                }).then(canvas => {
+                                                    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                                                    const sectionWidth = pdf.internal.pageSize.getWidth() - 20;
+                                                    const sectionHeight = canvas.height * sectionWidth / canvas.width;
+                                                    
+                                                    // Añadir título de la sección
+                                                    const sectionTitle = sections[index].querySelector('.section-title').textContent;
+                                                    pdf.setFont(undefined, 'bold');
+                                                    pdf.setFontSize(16);
+                                                    pdf.setTextColor(10, 10, 10);
+                                                    pdf.text(sectionTitle, 10, lastPosition);
+                                                    
+                                                    // Añadir imagen de la sección
+                                                    pdf.addImage(imgData, 'JPEG', 10, lastPosition + 10, sectionWidth, sectionHeight);
+                                                    
+                                                    // Añadir número de página
+                                                    pdf.setFont(undefined, 'normal');
+                                                    pdf.setFontSize(10);
+                                                    pdf.setTextColor(100, 100, 100);
+                                                    pdf.text('Página ' + (currentPage + 1), pdf.internal.pageSize.getWidth() - 20, pdf.internal.pageSize.getHeight() - 10, {align: 'right'});
+                                                    
+                                                    // Procesar la siguiente sección
+                                                    processNextSection(index + 1);
+                                                });
+                                            } else {
+                                                // Todas las secciones procesadas, guardar PDF
+                                                progressBarPdf.style.width = '100%';
+                                                loadingMessage.textContent = 'Descargando PDF...';
+                                                
+                                                setTimeout(() => {
+                                                    pdf.save('Analisis_Capacidad_Proceso_4K.pdf');
+                                                    loadingOverlay.classList.remove('show');
+                                                    showNotification('PDF A4 Optimizado generado con éxito');
+                                                }, 1000);
+                                            }
+                                        }
+                                    });
+                                    
+                                } else if (format === 'oneSheet') {
+                                    // Capturar toda la página para PDF de hoja única
+                                    const mainContent = document.body;
+                                    
+                                    html2canvas(mainContent, {
+                                        scale: 1.5, // Escala reducida para mejor rendimiento
+                                        useCORS: true,
+                                        logging: false,
+                                        allowTaint: true,
+                                        backgroundColor: body.hasAttribute('data-theme') ? '#1A202C' : '#FFFFFF',
+                                        windowWidth: 1920,
+                                        scrollX: 0,
+                                        scrollY: 0
+                                    }).then(canvas => {
+                                        const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                                        
+                                        // Crear PDF con dimensiones personalizadas basadas en el contenido
+                                        const orientation = canvas.width > canvas.height ? 'l' : 'p';
+                                        const pdf = new jsPDF(orientation, 'mm', [canvas.width * 0.264583, canvas.height * 0.264583], false);
+                                        
+                                        pdf.addImage(imgData, 'JPEG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
+                                        
+                                        progressBarPdf.style.width = '100%';
+                                        loadingMessage.textContent = 'Descargando PDF...';
+                                        
+                                        setTimeout(() => {
+                                            pdf.save('Analisis_Capacidad_Proceso_OneSheet_4K.pdf');
+                                            loadingOverlay.classList.remove('show');
+                                            showNotification('PDF en una sola hoja generado con éxito');
+                                        }, 1000);
+                                    });
+                                }
+                            }, 1000);
+                        }, 1000);
+                    }, 800);
+                }, 500);
+            }
+            
+            // Menú Móvil
+            const mobileMenu = document.getElementById('mobileMenu');
+            const navLinks = document.getElementById('navLinks');
+            
+            mobileMenu.addEventListener('click', function() {
+                navLinks.classList.toggle('active');
+                mobileMenu.querySelector('i').classList.toggle('fa-bars');
+                mobileMenu.querySelector('i').classList.toggle('fa-times');
+            });
+            
+            // Cerrar menú al hacer clic en un enlace
+            document.querySelectorAll('#navLinks a').forEach(link => {
+                link.addEventListener('click', () => {
+                    navLinks.classList.remove('active');
+                    mobileMenu.querySelector('i').classList.add('fa-bars');
+                    mobileMenu.querySelector('i').classList.remove('fa-times');
+                });
+            });
+            
+            // Animaciones al Scroll
+            const animatedElements = document.querySelectorAll('.animate');
+            
+            function checkIfInView() {
+                const windowHeight = window.innerHeight;
+                const windowTopPosition = window.scrollY;
+                const windowBottomPosition = windowTopPosition + windowHeight - 100;
+                
+                animatedElements.forEach(function(element) {
+                    const elementTopPosition = element.getBoundingClientRect().top + windowTopPosition;
+                    
+                    if (elementTopPosition <= windowBottomPosition) {
+                        element.classList.add('visible');
+                    }
+                });
+            }
+            
+            // Verificar elementos visibles al cargar
+            window.addEventListener('load', checkIfInView);
+            // Verificar al hacer scroll
+            window.addEventListener('scroll', checkIfInView);
+            
+            // Botón Volver Arriba
+            const backToTopButton = document.getElementById('backToTop');
+            
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 500) {
+                    backToTopButton.classList.add('visible');
+                } else {
+                    backToTopButton.classList.remove('visible');
+                }
+            });
+            
+            backToTopButton.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+            
+            // Barra de Progreso
+            const progressBar = document.getElementById('progressBar');
+            
+            window.addEventListener('scroll', function() {
+                const windowHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                const scrolled = (window.scrollY / windowHeight) * 100;
+                progressBar.style.width = scrolled + '%';
+            });
+            
+            // Control de notificaciones
+            const notification = document.getElementById('notification');
+            const notificationMessage = document.getElementById('notificationMessage');
+            const notificationClose = document.getElementById('notificationClose');
+
+            function showNotification(message) {
+                notificationMessage.textContent = message;
+                notification.classList.add('show');
+                
+                // Auto ocultar después de 5 segundos
+                setTimeout(() => {
+                    hideNotification();
+                }, 5000);
+            }
+
+            function hideNotification() {
+                notification.classList.remove('show');
+            }
+
+            notificationClose.addEventListener('click', hideNotification);
+            
+            // Tabs de Interpretación
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabPanels = document.querySelectorAll('.tab-panel');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Desactivar todos los botones y paneles
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabPanels.forEach(panel => panel.classList.remove('active'));
+                    
+                    // Activar el botón actual
+                    button.classList.add('active');
+                    
+                    // Activar el panel correspondiente
+                    const tabId = button.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Desplazamiento Suave para Enlaces
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const targetId = this.getAttribute('href');
+                    if(targetId === '#') return;
+                    
+                    const targetElement = document.querySelector(targetId);
+                    
+                    if (targetElement) {
+                        const navHeight = document.querySelector('.nav').offsetHeight;
+                        const targetPosition = targetElement.getBoundingClientRect().top + window.scrollY - navHeight;
+                        
+                        window.scrollTo({
+                            top: targetPosition,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+            
+            // Calculadora de Índices
+            const capacityForm = document.getElementById('capacityForm');
+            const results = document.getElementById('results');
+            
+            capacityForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const lsl = parseFloat(document.getElementById('lsl').value);
+                const usl = parseFloat(document.getElementById('usl').value);
+                const mean = parseFloat(document.getElementById('mean').value);
+                const stdDev = parseFloat(document.getElementById('stdDev').value);
+                
+                if(isNaN(lsl) || isNaN(usl) || isNaN(mean) || isNaN(stdDev)) {
+                    showNotification('Por favor, ingrese valores numéricos válidos.');
+                    return;
+                }
+                
+                if(stdDev <= 0) {
+                    showNotification('La desviación estándar debe ser mayor que cero.');
+                    return;
+                }
+                
+                if(lsl >= usl) {
+                    showNotification('El límite superior debe ser mayor que el límite inferior.');
+                    return;
+                }
+                
+                // Calcular índices
+                const cp = (usl - lsl) / (6 * stdDev);
+                const cpu = (usl - mean) / (3 * stdDev);
+                const cpl = (mean - lsl) / (3 * stdDev);
+                const cpk = Math.min(cpu, cpl);
+                
+                // Calcular porcentajes de defectos (usando approximación normal)
+                const zUpper = (usl - mean) / stdDev;
+                const zLower = (mean - lsl) / stdDev;
+                
+                // Usar math.js para cálculos estadísticos precisos
+                const upperDefects = math.erf(zUpper/Math.sqrt(2)) > 0.9999 ? 
+                    "<0.0001%" : ((1 - math.erf(zUpper/Math.sqrt(2)))/2 * 100).toFixed(4) + "%";
+                
+                const lowerDefects = math.erf(zLower/Math.sqrt(2)) > 0.9999 ?
+                    "<0.0001%" : ((1 - math.erf(zLower/Math.sqrt(2)))/2 * 100).toFixed(4) + "%";
+                
+                const totalDefects = math.erf(zUpper/Math.sqrt(2)) > 0.9999 && math.erf(zLower/Math.sqrt(2)) > 0.9999 ?
+                    "<0.0001%" : (((1 - math.erf(zUpper/Math.sqrt(2)))/2 + (1 - math.erf(zLower/Math.sqrt(2)))/2) * 100).toFixed(4) + "%";
+                
+                // Mostrar resultados con formato
+                document.getElementById('cpResult').textContent = cp.toFixed(4);
+                formatResult('cpResult', cp);
+                
+                document.getElementById('cpuResult').textContent = cpu.toFixed(4);
+                formatResult('cpuResult', cpu);
+                
+                document.getElementById('cplResult').textContent = cpl.toFixed(4);
+                formatResult('cplResult', cpl);
+                
+                document.getElementById('cpkResult').textContent = cpk.toFixed(4);
+                formatResult('cpkResult', cpk);
+                
+                // Generar interpretación
+                const interpretation = document.getElementById('interpretation');
+                let interpretationText = '';
+                
+                // Interpretación del Cp
+                interpretationText += '<strong>Cp = ' + cp.toFixed(4) + ':</strong> ';
+                if (cp < 0.67) {
+                    interpretationText += 'El proceso es <span style="color: #ED213A; font-weight: bold;">totalmente incapaz</span> de cumplir con las especificaciones. La variabilidad natural es excesivamente alta comparada con la amplitud de la especificación.';
+                } else if (cp < 1.00) {
+                    interpretationText += 'El proceso <span style="color: #F7971E; font-weight: bold;">no es capaz</span> de cumplir con las especificaciones. Se requiere una reducción significativa de la variabilidad.';
+                } else if (cp < 1.33) {
+                    interpretationText += 'El proceso es <span style="color: #F7971E; font-weight: bold;">marginalmente capaz</span>. Se recomienda un control estricto y continuo.';
+                } else if (cp < 1.67) {
+                    interpretationText += 'El proceso es <span style="color: #11998e; font-weight: bold;">capaz</span> (4-sigma). Adecuado para la mayoría de los procesos.';
+                } else if (cp < 2.00) {
+                    interpretationText += 'El proceso es <span style="color: #11998e; font-weight: bold;">muy capaz</span> (5-sigma). Excelente desempeño potencial.';
+                } else {
+                    interpretationText += 'El proceso tiene <span style="color: #3a7bd5; font-weight: bold;">capacidad excelente</span> (6-sigma o superior). Variabilidad extraordinariamente baja.';
+                }
+                
+                interpretationText += '<br><br>';
+                
+                // Interpretación del Cpk
+                interpretationText += '<strong>Cpk = ' + cpk.toFixed(4) + ':</strong> ';
+                if (cpk < 0.67) {
+                    interpretationText += 'El proceso es <span style="color: #ED213A; font-weight: bold;">totalmente incapaz</span> de cumplir con las especificaciones. Existe un alto porcentaje de productos fuera de especificación.';
+                } else if (cpk < 1.00) {
+                    interpretationText += 'El proceso <span style="color: #F7971E; font-weight: bold;">no es capaz</span> de cumplir con las especificaciones. Se están produciendo unidades fuera de especificación.';
+                } else if (cpk < 1.33) {
+                    interpretationText += 'El proceso es <span style="color: #F7971E; font-weight: bold;">marginalmente capaz</span>. Se recomienda mejorar el centrado y/o reducir la variabilidad.';
+                } else if (cpk < 1.67) {
+                    interpretationText += 'El proceso es <span style="color: #11998e; font-weight: bold;">capaz</span> (4-sigma). Adecuado para la mayoría de los procesos industriales.';
+                } else if (cpk < 2.00) {
+                    interpretationText += 'El proceso es <span style="color: #11998e; font-weight: bold;">muy capaz</span> (5-sigma). Excelente desempeño real.';
+                } else {
+                    interpretationText += 'El proceso tiene <span style="color: #3a7bd5; font-weight: bold;">capacidad excelente</span> (6-sigma o superior). Prácticamente no se producen unidades fuera de especificación.';
+                }
+                
+                interpretationText += '<br><br>';
+                
+                // Estadísticas de defectos
+                interpretationText += '<strong>Estadísticas detalladas:</strong><br>';
+                interpretationText += '<ul>';
+                interpretationText += '<li>Probabilidad de defectos por debajo del LSI: ' + lowerDefects + '</li>';
+                interpretationText += '<li>Probabilidad de defectos por encima del LSE: ' + upperDefects + '</li>';
+                interpretationText += '<li>Probabilidad total de defectos: ' + totalDefects + '</li>';
+                interpretationText += '</ul><br>';
+                
+                // Relación entre Cp y Cpk
+                const diff = cp - cpk;
+                const ratio = cpk / cp;
+                
+                interpretationText += '<strong>Relación Cp-Cpk:</strong> ';
+                
+                if (diff < 0.1) {
+                    interpretationText += 'El proceso está <span style="color: #11998e; font-weight: bold;">bien centrado</span> (Cpk/Cp = ' + ratio.toFixed(2) + ').';
+                } else if (diff < 0.3) {
+                    interpretationText += 'El proceso está <span style="color: #F7971E; font-weight: bold;">ligeramente descentrado</span> (Cpk/Cp = ' + ratio.toFixed(2) + '). Existe oportunidad de mejora mediante el centrado.';
+                } else {
+                    interpretationText += 'El proceso está <span style="color: #ED213A; font-weight: bold;">significativamente descentrado</span> (Cpk/Cp = ' + ratio.toFixed(2) + '). Es altamente recomendable ajustar la media del proceso.';
+                }
+                
+                // Recomendación final
+                interpretationText += '<br><br><strong>Recomendación:</strong> ';
+                
+                if (cp < 1 && cpk < 1) {
+                    interpretationText += 'Rediseñar o mejorar significativamente el proceso. Priorizar la reducción de la variabilidad y posteriormente trabajar en el centrado.';
+                } else if (cp >= 1 && cpk < 1) {
+                    interpretationText += 'Centrar el proceso para aprovechar su capacidad potencial. La variabilidad es aceptable, pero la media del proceso está demasiado cerca de uno de los límites.';
+                } else if (cp < 1 && cpk < 1 && (cp - cpk < 0.1)) {
+                    interpretationText += 'Reducir la variabilidad del proceso manteniendo el buen centrado actual.';
+                } else if (cpk >= 1.33) {
+                    interpretationText += 'Mantener el control estadístico. El proceso muestra un buen desempeño.';
+                } else {
+                    interpretationText += 'Implementar mejoras para incrementar el valor de Cpk a al menos 1.33, que es el valor mínimo aceptado en la mayoría de las industrias.';
+                }
+                
+                interpretation.innerHTML = interpretationText;
+                
+                // Mostrar resultados
+                results.style.display = 'block';
+                
+                // Generar gráfico
+                renderProcessCapabilityChart(lsl, usl, mean, stdDev);
+                
+                // Animación de scroll a los resultados
+                setTimeout(() => {
+                    results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 200);
+            });
+            
+            // Función para formatear resultados con colores
+            function formatResult(elementId, value) {
+                const element = document.getElementById(elementId);
+                
+                if (value < 1) {
+                    element.style.color = '#ED213A'; // Rojo para valores insuficientes
+                } else if (value < 1.33) {
+                    element.style.color = '#F7971E'; // Naranja para valores marginales
+                } else if (value < 1.67) {
+                    element.style.color = '#11998e'; // Verde para valores buenos
+                } else {
+                    element.style.color = '#3a7bd5'; // Azul para valores excelentes
+                }
+            }
+
+            // Función para generar gráficos dinámicos de capacidad de proceso
+            function renderProcessCapabilityChart(lsl, usl, mean, stdDev) {
+                const canvas = document.getElementById('processCapabilityChart');
+                const ctx = canvas.getContext('2d');
+                
+                // Limpiar canvas existente
+                if (window.capacityChart) {
+                    window.capacityChart.destroy();
+                }
+                
+                // Generar datos para el gráfico
+                const range = Math.max(6 * stdDev, usl - lsl);
+                const min = Math.min(mean - 4 * stdDev, lsl - range * 0.1);
+                const max = Math.max(mean + 4 * stdDev, usl + range * 0.1);
+                const step = (max - min) / 500;
+                
+                // Datos para la distribución normal
+                const labels = [];
+                const normalData = [];
+                const lowerSpecData = [];
+                const upperSpecData = [];
+                const withinSpecData = [];
+                
+                for (let x = min; x <= max; x += step) {
+                    labels.push(x.toFixed(4));
+                    
+                    // Calcular la función de densidad normal
+                    const z = (x - mean) / stdDev;
+                    const normalValue = Math.exp(-0.5 * z * z) / (stdDev * Math.sqrt(2 * Math.PI));
+                    normalData.push(normalValue);
+                    
+                    // Separar datos por regiones
+                    if (x < lsl) {
+                        lowerSpecData.push(normalValue);
+                        upperSpecData.push(0);
+                        withinSpecData.push(0);
+                    } else if (x > usl) {
+                        lowerSpecData.push(0);
+                        upperSpecData.push(normalValue);
+                        withinSpecData.push(0);
+                    } else {
+                        lowerSpecData.push(0);
+                        upperSpecData.push(0);
+                        withinSpecData.push(normalValue);
+                    }
+                }
+                
+                // Calcular áreas bajo la curva (aproximadas)
+                let totalArea = 0;
+                let lowerOutArea = 0;
+                let upperOutArea = 0;
+                let withinArea = 0;
+
+                for (let i = 0; i < normalData.length; i++) {
+                    const x = parseFloat(labels[i]);
+                    const y = normalData[i];
+                    
+                    totalArea += y * step;
+                    
+                    if (x < lsl) {
+                        lowerOutArea += y * step;
+                    } else if (x > usl) {
+                        upperOutArea += y * step;
+                    } else {
+                        withinArea += y * step;
+                    }
+                }
+
+                // Normalizar las áreas para obtener porcentajes
+                const lowerOutPercent = (lowerOutArea / totalArea) * 100;
+                const upperOutPercent = (upperOutArea / totalArea) * 100;
+                const totalOutPercent = lowerOutPercent + upperOutPercent;
+                const withinPercent = 100 - totalOutPercent;
+                
+                // Calcular índices de capacidad
+                const cp = (usl - lsl) / (6 * stdDev);
+                const cpu = (usl - mean) / (3 * stdDev);
+                const cpl = (mean - lsl) / (3 * stdDev);
+                const cpk = Math.min(cpu, cpl);
+
+                // Crear el gráfico utilizando Chart.js
+                window.capacityChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Por debajo de LSI',
+                                data: lowerSpecData,
+                                backgroundColor: 'rgba(237, 33, 58, 0.6)',
+                                borderWidth: 0,
+                                pointRadius: 0,
+                                fill: true,
+                                order: 3
+                            },
+                            {
+                                label: 'Dentro de especificaciones',
+                                data: withinSpecData,
+                                backgroundColor: 'rgba(17, 153, 142, 0.6)',
+                                borderWidth: 0,
+                                pointRadius: 0,
+                                fill: true,
+                                order: 1
+                            },
+                            {
+                                label: 'Por encima de LSE',
+                                data: upperSpecData,
+                                backgroundColor: 'rgba(237, 33, 58, 0.6)',
+                                borderWidth: 0,
+                                pointRadius: 0,
+                                fill: true,
+                                order: 2
+                            },
+                            {
+                                label: 'Distribución del proceso',
+                                data: normalData,
+                                borderColor: '#3a7bd5',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: false,
+                                order: 0
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Valor de la Medición',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                },
+                                ticks: {
+                                    maxTicksLimit: 10,
+                                    callback: function(value, index, values) {
+                                        const actualValue = parseFloat(labels[index]);
+                                        return actualValue?.toFixed(2);
+                                    }
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Densidad de Probabilidad',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                },
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        const x = parseFloat(tooltipItems[0].label);
+                                        return 'Valor: ' + x.toFixed(3);
+                                    }
+                                }
+                            },
+                            annotation: {
+                                annotations: {
+                                    lslLine: {
+                                        type: 'line',
+                                        scaleID: 'x',
+                                        value: lsl,
+                                        borderColor: '#ED213A',
+                                        borderWidth: 2,
+                                        borderDash: [6, 4],
+                                        label: {
+                                            backgroundColor: 'rgba(237, 33, 58, 0.8)',
+                                            content: 'LSI: ' + lsl.toFixed(4),
+                                            enabled: true,
+                                            position: 'start'
+                                        }
+                                    },
+                                    uslLine: {
+                                        type: 'line',
+                                        scaleID: 'x',
+                                        value: usl,
+                                        borderColor: '#ED213A',
+                                        borderWidth: 2,
+                                        borderDash: [6, 4],
+                                        label: {
+                                            backgroundColor: 'rgba(237, 33, 58, 0.8)',
+                                            content: 'LSE: ' + usl.toFixed(4),
+                                            enabled: true,
+                                            position: 'start'
+                                        }
+                                    },
+                                    meanLine: {
+                                        type: 'line',
+                                        scaleID: 'x',
+                                        value: mean,
+                                        borderColor: '#3a7bd5',
+                                        borderWidth: 2,
+                                        label: {
+                                            backgroundColor: 'rgba(58, 123, 213, 0.8)',
+                                            content: 'μ: ' + mean.toFixed(4),
+                                            enabled: true,
+                                            position: 'start'
+                                        }
+                                    },
+                                    lowerSigma: {
+                                        type: 'line',
+                                        scaleID: 'x',
+                                        value: mean - 3 * stdDev,
+                                        borderColor: 'rgba(58, 123, 213, 0.5)',
+                                        borderWidth: 1,
+                                        borderDash: [3, 3],
+                                        label: {
+                                            backgroundColor: 'rgba(58, 123, 213, 0.7)',
+                                            content: '-3σ',
+                                            enabled: true,
+                                            position: 'start',
+                                            font: {
+                                                size: 11
+                                            }
+                                        }
+                                    },
+                                    upperSigma: {
+                                        type: 'line',
+                                        scaleID: 'x',
+                                        value: mean + 3 * stdDev,
+                                        borderColor: 'rgba(58, 123, 213, 0.5)',
+                                        borderWidth: 1,
+                                        borderDash: [3, 3],
+                                        label: {
+                                            backgroundColor: 'rgba(58, 123, 213, 0.7)',
+                                            content: '+3σ',
+                                            enabled: true,
+                                            position: 'start',
+                                            font: {
+                                                size: 11
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: [
+                                    'Distribución del Proceso y Especificaciones',
+                                    'Cp: ' + cp.toFixed(4) + '   Cpk: ' + cpk.toFixed(4) + '   Dentro de especificaciones: ' + withinPercent.toFixed(4) + '%'
+                                ],
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                },
+                                padding: {
+                                    bottom: 20
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Inicializar gráficos de ejemplo para Cp y Cpk
+            function initExampleCharts() {
+                renderCpExampleChart();
+                renderCpkExampleChart();
+            }
+
+            function renderCpExampleChart() {
+                const canvas = document.getElementById('cpChart');
+                if (!canvas) return;
+
+                if (window.cpDemoChart) {
+                    window.cpDemoChart.destroy();
+                }
+
+                // Configuraciones para diferentes valores de Cp
+                const scenarios = [
+                    { cp: 0.7, color: '#ED213A', label: 'Cp < 1: Proceso no capaz' },
+                    { cp: 1.0, color: '#F7971E', label: 'Cp = 1: Proceso apenas capaz' },
+                    { cp: 1.8, color: '#11998e', label: 'Cp > 1: Proceso capaz' }
+                ];
+
+                // Generar datos para el gráfico
+                const lsl = 0;
+                const usl = 6;
+                const mean = 3;
+
+                const labels = [];
+                const datasets = [];
+
+                // Crear un dataset para cada escenario
+                scenarios.forEach(scenario => {
+                    const stdDev = (usl - lsl) / (6 * scenario.cp);
+                    const data = [];
+
+                    // Generar 100 puntos para cada curva de distribución normal
+                    for (let x = -1; x <= 7; x += 0.08) {
+                        if (datasets.length === 0) {
+                            labels.push(x.toFixed(2));
+                        }
+                        const z = (x - mean) / stdDev;
+                        const normalValue = Math.exp(-0.5 * z * z) / (stdDev * Math.sqrt(2 * Math.PI));
+                        data.push(normalValue);
+                    }
+
+                    datasets.push({
+                        label: scenario.label,
+                        data: data,
+                        borderColor: scenario.color,
+                        backgroundColor: scenario.color + '40',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: true,
+                        tension: 0.4
+                    });
+                });
+
+                // Crear el gráfico
+                window.cpDemoChart = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Valor de la Medición',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Densidad de Probabilidad',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                },
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            annotation: {
+                                annotations: {
+                                    lslLine: {
+                                        type: 'line',
+                                        scaleID: 'x',
+                                        value: lsl,
+                                        borderColor: '#666666',
+                                        borderWidth: 2,
+                                        borderDash: [6, 4],
+                                        label: {
+                                            backgroundColor: 'rgba(102, 102, 102, 0.8)',
+                                            content: 'LSI',
+                                            enabled: true,
+                                            position: 'start'
+                                        }
+                                    },
+                                    uslLine: {
+                                        type: 'line',
+                                        scaleID: 'x',
+                                        value: usl,
+                                        borderColor: '#666666',
+                                        borderWidth: 2,
+                                        borderDash: [6, 4],
+                                        label: {
+                                            backgroundColor: 'rgba(102, 102, 102, 0.8)',
+                                            content: 'LSE',
+                                            enabled: true,
+                                            position: 'start'
+                                        }
+                                    }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Comparación de diferentes valores de Cp',
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                },
+                                padding: {
+                                    bottom: 20
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function renderCpkExampleChart() {
+                const canvas = document.getElementById('cpkChart');
+                if (!canvas) return;
+
+                if (window.cpkDemoChart) {
+                    window.cpkDemoChart.destroy();
+                }
+
+                // Configuraciones para diferentes valores de Cpk
+                const scenarios = [
+                    { cp: 1.2, shift: -1.2, color: '#ED213A', label: 'Cpk < 1: Proceso descentrado' },
+                    { cp: 1.2, shift: -0.6, color: '#F7971E', label: 'Cpk = 1: Proceso apenas capaz' },
+                    { cp: 1.2, shift: 0, color: '#11998e', label: 'Cpk > 1: Proceso centrado y capaz' }
+                ];
+
+                // Generar datos para el gráfico
+                const lsl = 0;
+                const usl = 6;
+                const idealMean = 3;
+
+                const labels = [];
+                const datasets = [];
+
+                // Crear un dataset para cada escenario
+                scenarios.forEach(scenario => {
+                    const stdDev = (usl - lsl) / (6 * scenario.cp);
+                    const mean = idealMean + scenario.shift; // Media desplazada
+                    const data = [];
+
+                    // Generar 100 puntos para cada curva de distribución normal
+                    for (let x = -1; x <= 7; x += 0.08) {
+                        if (datasets.length === 0) {
+                            labels.push(x.toFixed(2));
+                        }
+                        const z = (x - mean) / stdDev;
+                        const normalValue = Math.exp(-0.5 * z * z) / (stdDev * Math.sqrt(2 * Math.PI));
+                        data.push(normalValue);
+                    }
+
+                    const cpu = (usl - mean) / (3 * stdDev);
+                    const cpl = (mean - lsl) / (3 * stdDev);
+                    const cpk = Math.min(cpu, cpl);
+
+                    datasets.push({
+                        label: scenario.label + ' (Cpk = ' + cpk.toFixed(2) + ')',
+                        data: data,
+                        borderColor: scenario.color,
+                        backgroundColor: scenario.color + '40',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: true,
+                        tension: 0.4
+                    });
+                });
+
+                // Crear el gráfico
+                window.cpkDemoChart = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Valor de la Medición',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Densidad de Probabilidad',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                },
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            annotation: {
+                                annotations: {
+                                    lslLine: {
+                                        type: 'line',
+                                        scaleID: 'x',
+                                        value: lsl,
+                                        borderColor: '#666666',
+                                        borderWidth: 2,
+                                        borderDash: [6, 4],
+                                        label: {
+                                            backgroundColor: 'rgba(102, 102, 102, 0.8)',
+                                            content: 'LSI',
+                                            enabled: true,
+                                            position: 'start'
+                                        }
+                                    },
+                                    uslLine: {
+                                        type: 'line',
+                                        scaleID: 'x',
+                                        value: usl,
+                                        borderColor: '#666666',
+                                        borderWidth: 2,
+                                        borderDash: [6, 4],
+                                        label: {
+                                            backgroundColor: 'rgba(102, 102, 102, 0.8)',
+                                            content: 'LSE',
+                                            enabled: true,
+                                            position: 'start'
+                                        }
+                                    },
+                                    meanLine: {
+                                        type: 'line',
+                                        scaleID: 'x',
+                                        value: idealMean,
+                                        borderColor: '#3a7bd5',
+                                        borderWidth: 1,
+                                        borderDash: [3, 3],
+                                        label: {
+                                            backgroundColor: 'rgba(58, 123, 213, 0.7)',
+                                            content: 'Centro ideal',
+                                            enabled: true,
+                                            position: 'start',
+                                            font: {
+                                                size: 11
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Efecto de la centralidad en el índice Cpk',
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                },
+                                padding: {
+                                    bottom: 20
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Inicializar los gráficos de ejemplo al cargar la página
+            window.addEventListener('load', function() {
+                setTimeout(initExampleCharts, 500); // Pequeño retraso para asegurar que los canvas están listos
+                
+                // Mostrar un mensaje de bienvenida
+                setTimeout(function() {
+                    showNotification('Bienvenido a la calculadora profesional de Cp y Cpk. La versión actualizada 2025-05-28 por PFfrank13.');
+                }, 1000);
+            });
+            
+            // Ajustar tamaños de canvas cuando cambia el tamaño de la ventana
+            window.addEventListener('resize', function() {
+                if (window.cpDemoChart) window.cpDemoChart.resize();
+                if (window.cpkDemoChart) window.cpkDemoChart.resize();
+                if (window.capacityChart) window.capacityChart.resize();
+            });
+
+            // Detectar cambios en el tema para actualizar los gráficos
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.attributeName === 'data-theme') {
+                        // Actualizar colores de los gráficos
+                        setTimeout(function() {
+                            initExampleCharts();
+                            if (window.capacityChart) {
+                                const form = document.getElementById('capacityForm');
+                                if (form) form.dispatchEvent(new Event('submit'));
+                            }
+                        }, 100);
+                    }
+                });
+            });
+
+            observer.observe(body, { attributes: true });
+        });
+    </script>
+</body>
+</html>
